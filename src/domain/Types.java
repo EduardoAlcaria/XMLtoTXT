@@ -8,7 +8,7 @@ public enum Types {
     DATETIME("DATETIME"),
     ENUMERATION("ENUMERATION");
 
-    private String type;
+    private final String type;
 
     Types(String type) {
         this.type = type;
