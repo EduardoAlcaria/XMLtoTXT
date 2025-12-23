@@ -184,7 +184,7 @@ public class ConvertXMLToText {
             for (AssociationInfo assoc : associations) {
                 String name = Format.formatPaddingRight(assoc.name, maxAssocNameLen);
                 String toEntity = Format.formatPaddingRight(assoc.toEntity, maxToEntityLen);
-                String attrs = String.join(", ", assoc.attributes);
+                String attrs = String.join(",", assoc.attributes);
 
                 String typeRef = assoc.isParent ? "parent" : "reference";
 
