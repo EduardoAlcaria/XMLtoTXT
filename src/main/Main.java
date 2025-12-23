@@ -23,6 +23,11 @@ public class Main {
             Files.createDirectories(outputFile);
         }
 
+        if (Files.notExists(inputFolder)) {
+            Files.createDirectories(inputFolder);
+            System.out.println("Please put your entity files on the entityToBeConverted folder");
+        }
+
         try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(inputFolder)){
             for (Path path : directoryStream) {
                 try {
