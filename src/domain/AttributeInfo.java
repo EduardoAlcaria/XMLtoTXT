@@ -11,6 +11,7 @@ public class AttributeInfo {
     public String format;
     public Map<String, String> codeGenProperties = new LinkedHashMap<>();
 
+
     public boolean isPrimaryKey;
     public boolean isParentKey;
     public boolean isPublic;

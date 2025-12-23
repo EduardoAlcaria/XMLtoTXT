@@ -11,7 +11,7 @@ public enum Flags {
     DERIVED("/DERIVED"),
     NONE("-");
 
-    private String value;
+    private final String value;
 
     Flags(String value) {
         this.value = value;

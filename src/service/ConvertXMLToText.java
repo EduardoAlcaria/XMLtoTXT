@@ -73,6 +73,7 @@ public class ConvertXMLToText {
         NodeList associations = doc.getElementsByTagName("ASSOCIATION");
         List<AssociationInfo> assocList = new ArrayList<>();
 
+
         for (int i = 0; i < associations.getLength(); i++) {
             Node assocNode = associations.item(i);
             if (assocNode.getNodeType() == Node.ELEMENT_NODE) {
@@ -83,6 +84,7 @@ public class ConvertXMLToText {
                 assoc.toEntity = Extract.elementText(assocElement, "TO_ENTITY");
                 assoc.isParent = "1".equals(Extract.elementText(assocElement, "IS_PARENT"));
                 assoc.isViewReference = "1".equals(Extract.elementText(assocElement, "IS_VIEW_REFERENCE"));
+
 
                 NodeList assocAttrs = assocElement.getElementsByTagName("ASSOCIATION_ATTRIBUTE");
                 List<String> assocAttrNames = new ArrayList<>();
@@ -99,6 +101,7 @@ public class ConvertXMLToText {
                 }
 
                 assoc.attributes = assocAttrNames;
+                assoc.properties = Extract.extractAssociationProperties(assocElement);
                 assocList.add(assoc);
             }
         }
@@ -183,12 +186,21 @@ public class ConvertXMLToText {
 
             for (AssociationInfo assoc : associations) {
                 String name = Format.formatPaddingRight(assoc.name, maxAssocNameLen);
-                String toEntity = Format.formatPaddingRight(assoc.toEntity, maxToEntityLen);
+                String toEntity = Format.formatPaddingRight(assoc.toEntity, maxToEntityLen).strip();
                 String attrs = String.join(",", assoc.attributes);
 
                 String typeRef = assoc.isParent ? "parent" : "reference";
 
-                writer.println("   " + typeRef + "    " + name + "    " + toEntity + "(" + attrs + ");");
+
+
+                if (!assoc.properties.isEmpty()) {
+                    for (Map.Entry<String, String> entry : assoc.properties.entrySet()) {
+                        writer.print("   " + typeRef + "    " + name + "    " + toEntity + "(" + attrs + ")/" + entry.getValue() + ";");
+                    }
+                }else{
+                    writer.print("   " + typeRef + "    " + name + "    " + toEntity + "(" + attrs + ");");
+                }
+                writer.println();
             }
 
             writer.println("}");

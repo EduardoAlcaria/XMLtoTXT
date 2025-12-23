@@ -77,4 +77,51 @@ public class Extract {
         }
         return AccessModifiers.PRIVATE.getAccessModifier();
     }
+
+    protected static Map<String, String> extractAssociationProperties(Element assocElement) {
+        Map<String, String> properties = new LinkedHashMap<>();
+
+
+        NodeList children = assocElement.getChildNodes();
+
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+
+
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                Element childElement = (Element) child;
+                String tagName = childElement.getTagName();
+
+
+                if (tagName.equals("NAME") ||
+                        tagName.equals("IS_PARENT") ||
+                        tagName.equals("IS_VIEW_REFERENCE") ||
+                        tagName.equals("TO_ENTITY") ||
+                        tagName.equals("ATTRIBUTES")) {
+                    continue;
+                }
+
+
+                NodeList grandChildren = childElement.getChildNodes();
+                boolean hasOnlyText = true;
+
+                for (int j = 0; j < grandChildren.getLength(); j++) {
+                    if (grandChildren.item(j).getNodeType() == Node.ELEMENT_NODE) {
+                        hasOnlyText = false;
+                        break;
+                    }
+                }
+
+
+                if (hasOnlyText) {
+                    String value = childElement.getTextContent().trim();
+                    if (!value.isEmpty()) {
+                        properties.put(tagName, value);
+                    }
+                }
+            }
+        }
+
+        return properties;
+    }
 }
