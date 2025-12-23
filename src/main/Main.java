@@ -14,7 +14,11 @@ import java.util.*;
 
 
 public class Main {
+    public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_RESET = "\u001B[0m";
+
     public static void main(String[] args) throws IOException {
+
         Path outputFile = Paths.get("entityTXTConverted");
         Path inputFolder = Paths.get("entityToBeConverted");
 
@@ -25,8 +29,9 @@ public class Main {
 
         if (Files.notExists(inputFolder)) {
             Files.createDirectories(inputFolder);
-            System.out.println("Please put your entity files on the entityToBeConverted folder");
+            System.out.println(ANSI_YELLOW + "Please put your entity files on the entityToBeConverted folder" + ANSI_RESET);
         }
+
 
         try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(inputFolder)){
             for (Path path : directoryStream) {
@@ -39,7 +44,6 @@ public class Main {
             }
         }
 
-        System.out.println("done");
     }
 
 }
