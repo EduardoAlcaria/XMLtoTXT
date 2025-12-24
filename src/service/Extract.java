@@ -34,7 +34,7 @@ public class Extract {
                         if (!tagName.equals("CODE_GENERATION_PROPERTIES") &&
                                 value != null && !value.trim().isEmpty()) {
 
-                            String propertyName = Converter.tagNameToPropertyName(tagName);
+                            String propertyName = Format.tagNameToPropertyName(tagName);
                             properties.put(propertyName, value.trim());
                         }
                     }
