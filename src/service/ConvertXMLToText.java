@@ -1,7 +1,7 @@
 package service;
 
-import domain.AssociationInfo;
-import domain.AttributeInfo;
+import com.sun.nio.sctp.Association;
+import domain.*;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -19,7 +19,13 @@ import java.util.List;
 import java.util.Map;
 
 public class ConvertXMLToText {
-    public static String convert(Path xmlFile, Path outputDir) throws Exception {
+    public static final String ANSI_GREEN = "\u001B[32m";
+    public static final String ANSI_RESET = "\u001B[0m";
+
+    public static void convert(Path xmlFile, Path outputDir) throws Exception {
+
+        System.out.println(ANSI_GREEN + "Converting entity " + xmlFile.getFileName() + ANSI_RESET);
+
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
@@ -29,6 +35,7 @@ public class ConvertXMLToText {
         String entityName = Extract.textContent(doc, "NAME");
         String component = Extract.textContent(doc, "COMPONENT");
         String layer = Extract.textContent(doc, "LAYER");
+
 
 
         NodeList attributes = doc.getElementsByTagName("ATTRIBUTE");
@@ -70,41 +77,9 @@ public class ConvertXMLToText {
             }
         }
 
-        NodeList associations = doc.getElementsByTagName("ASSOCIATION");
-        List<AssociationInfo> assocList = new ArrayList<>();
+        List<AssociationInfo> assocList = Associations.getAssociations(doc);
+        List<StateInfo> stateList = StateMachine.extractStates(doc);
 
-
-        for (int i = 0; i < associations.getLength(); i++) {
-            Node assocNode = associations.item(i);
-            if (assocNode.getNodeType() == Node.ELEMENT_NODE) {
-                Element assocElement = (Element) assocNode;
-                AssociationInfo assoc = new AssociationInfo();
-
-                assoc.name = Extract.elementText(assocElement, "NAME");
-                assoc.toEntity = Extract.elementText(assocElement, "TO_ENTITY");
-                assoc.isParent = "1".equals(Extract.elementText(assocElement, "IS_PARENT"));
-                assoc.isViewReference = "1".equals(Extract.elementText(assocElement, "IS_VIEW_REFERENCE"));
-
-
-                NodeList assocAttrs = assocElement.getElementsByTagName("ASSOCIATION_ATTRIBUTE");
-                List<String> assocAttrNames = new ArrayList<>();
-
-                for (int j = 0; j < assocAttrs.getLength(); j++) {
-                    Node assocAttrNode = assocAttrs.item(j);
-                    if (assocAttrNode.getNodeType() == Node.ELEMENT_NODE) {
-                        Element assocAttrElement = (Element) assocAttrNode;
-                        String attrName = Extract.elementText(assocAttrElement, "NAME");
-                        if (attrName != null) {
-                            assocAttrNames.add(attrName);
-                        }
-                    }
-                }
-
-                assoc.attributes = assocAttrNames;
-                assoc.properties = Extract.extractAssociationProperties(assocElement);
-                assocList.add(assoc);
-            }
-        }
 
         generateOutputFile(
                 Path.of(outputDir.toString(), entityName + ".entity"),
@@ -112,100 +87,85 @@ public class ConvertXMLToText {
                 component,
                 layer,
                 attrList,
-                assocList
+                assocList,
+                stateList
         );
 
-        return entityName;
+
     }
+
     private static void generateOutputFile(Path outputFile,
                                            String entityName,
                                            String component,
                                            String layer,
                                            List<AttributeInfo> attributes,
-                                           List<AssociationInfo> associations) throws IOException {
+                                           List<AssociationInfo> associations,
+                                           List<StateInfo> states) throws IOException {
 
-        PrintWriter writer = new PrintWriter(new FileWriter(outputFile.toFile()));
-
-        writer.println("entityname " + entityName + ";");
-        writer.println("component  " + component + ";");
-        if (!layer.isEmpty()) {
-            writer.println("layer      " + layer + ";");
-        }
-        writer.println();
-        writer.println();
-
-        writer.println("attributes {");
-
-        int maxNameLen = 0;
-        int maxDatatypeLen = 0;
-        int maxFlagsLen = 0;
-
-        for (AttributeInfo attr : attributes) {
-
-            maxNameLen = Math.max(maxNameLen, attr.name.length());
-            String datatypeStr = Format.formatDatatype(attr);
-            maxDatatypeLen = Math.max(maxDatatypeLen, datatypeStr.length());
-            String flagsStr = Format.formatFlags(attr);
-            maxFlagsLen = Math.max(maxFlagsLen, flagsStr.length());
-        }
-
-        for (AttributeInfo attr : attributes) {
-            String visibility = Extract.visibility(attr);
-            String name = Format.formatPaddingRight(attr.name, maxNameLen);
-            String datatype = Format.formatPaddingRight(Format.formatDatatype(attr), maxDatatypeLen);
-            String flags = Format.formatPaddingRight(Format.formatFlags(attr), maxFlagsLen);
-
-
-            writer.print("   " + visibility + " " + name + " " + datatype + " " + flags);
-
-
-            if (!attr.codeGenProperties.isEmpty()) {
-                writer.println("{");
-                for (Map.Entry<String, String> entry : attr.codeGenProperties.entrySet()) {
-                    writer.println("      " + entry.getKey() + " \"" + entry.getValue() + "\";");
-                }
-                writer.print("   }");
+        try (PrintWriter writer = new PrintWriter(new FileWriter(outputFile.toFile()))){
+            writer.println("entityname " + entityName + ";");
+            writer.println("component  " + component + ";");
+            if (!layer.isEmpty()) {
+                writer.println("layer      " + layer + ";");
             }
-
             writer.println();
-        }
+            writer.println();
 
-        writer.println("}");
-        writer.println();
+            writer.println("attributes {");
 
-        if (!associations.isEmpty()) {
-            writer.println("associations {");
+            int maxNameLen = 0;
+            int maxDatatypeLen = 0;
+            int maxFlagsLen = 0;
 
-            int maxAssocNameLen = 0;
-            int maxToEntityLen = 0;
+            for (AttributeInfo attr : attributes) {
 
-            for (AssociationInfo assoc : associations) {
-                maxAssocNameLen = Math.max(maxAssocNameLen, assoc.name.length());
-                maxToEntityLen = Math.max(maxToEntityLen, assoc.toEntity.length());
+                maxNameLen = Math.max(maxNameLen, attr.name.length());
+                String datatypeStr = Format.formatDatatype(attr);
+                maxDatatypeLen = Math.max(maxDatatypeLen, datatypeStr.length());
+                String flagsStr = Format.formatFlags(attr);
+                maxFlagsLen = Math.max(maxFlagsLen, flagsStr.length());
             }
 
-            for (AssociationInfo assoc : associations) {
-                String name = Format.formatPaddingRight(assoc.name, maxAssocNameLen);
-                String toEntity = Format.formatPaddingRight(assoc.toEntity, maxToEntityLen).strip();
-                String attrs = String.join(",", assoc.attributes);
-
-                String typeRef = assoc.isParent ? "parent" : "reference";
-
+            for (AttributeInfo attr : attributes) {
+                String visibility = Extract.visibility(attr);
+                String name = Format.formatPaddingRight(attr.name, maxNameLen);
+                String datatype = Format.formatPaddingRight(Format.formatDatatype(attr), maxDatatypeLen);
+                String flags = Format.formatPaddingRight(Format.formatFlags(attr), maxFlagsLen);
 
 
-                if (!assoc.properties.isEmpty()) {
-                    for (Map.Entry<String, String> entry : assoc.properties.entrySet()) {
-                        writer.print("   " + typeRef + "    " + name + "    " + toEntity + "(" + attrs + ")/" + entry.getValue() + ";");
+                writer.print("   " + visibility + " " + name + " " + datatype + " " + flags);
+
+
+                if (!attr.codeGenProperties.isEmpty()) {
+                    writer.println("{");
+                    for (Map.Entry<String, String> entry : attr.codeGenProperties.entrySet()) {
+                        writer.println("      " + entry.getKey() + " \"" + entry.getValue() + "\";");
                     }
-                }else{
-                    writer.print("   " + typeRef + "    " + name + "    " + toEntity + "(" + attrs + ");");
+                    writer.print("   }");
                 }
+
                 writer.println();
             }
 
             writer.println("}");
-        }
+            writer.println();
 
-        writer.close();
+            if (!associations.isEmpty()) {
+                Associations.writeAssoc(writer, associations);
+            }
+
+            if (!associations.isEmpty()) {
+                StateMachine.writeStates(writer, states);
+            }
+
+
+
+
+        }catch (RuntimeException e) {
+            throw new RuntimeException(e);
+        }
     }
+
+
+
 }
