@@ -20,11 +20,12 @@ import java.util.Map;
 
 public class ConvertXMLToText {
     public static final String ANSI_GREEN = "\u001B[32m";
+    public static final String ANSI_CYAN = "\u001B[36m";
     public static final String ANSI_RESET = "\u001B[0m";
 
     public static void convert(Path xmlFile, Path outputDir) throws Exception {
 
-        System.out.println(ANSI_GREEN + "Converting entity " + xmlFile.getFileName() + ANSI_RESET);
+        System.out.println(ANSI_CYAN + "Converting entity " + xmlFile.getFileName() + ANSI_RESET);
 
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
