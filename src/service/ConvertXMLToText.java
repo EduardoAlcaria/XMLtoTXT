@@ -37,7 +37,20 @@ public class ConvertXMLToText {
         String component = Extract.textContent(doc, "COMPONENT");
         String layer = Extract.textContent(doc, "LAYER");
 
+        NodeList codeGenAttributes = doc.getElementsByTagName("CODE_GENERATION_PROPERTIES");
+        List<String> properties = new ArrayList<>();
 
+        for (int i = 0; i < codeGenAttributes.getLength(); i++) {
+            Node attrNode = codeGenAttributes.item(i);
+            if (attrNode.getNodeType() == Node.ELEMENT_NODE) {
+                Element element = (Element) attrNode;
+
+                System.out.println(element.getBaseURI());
+
+
+            }
+
+        }
 
         NodeList attributes = doc.getElementsByTagName("ATTRIBUTE");
         List<AttributeInfo> attrList = new ArrayList<>();
@@ -52,9 +65,22 @@ public class ConvertXMLToText {
                 attr.datatype = Extract.elementText(attrElement, "DATATYPE");
 
 
+
+
                 if (attr.datatype != null && attr.datatype.equalsIgnoreCase("ENUMERATION")) {
                     attr.enumName = Extract.elementText(attrElement, "ENUMERATION_NAME");
+                    if (Extract.elementText(attrElement, "ENUMERATION_SUBSET") != null) {
+                        attr.enumSubset = Extract.elementText(attrElement, "ENUMERATION_SUBSET");
+                    }
                 }
+
+                boolean hasBooleanValue = (Extract.elementText(attrElement, "BOOLEAN_TRUE_VALUE") != null);
+
+                if (hasBooleanValue) {
+                    attr.booleanValue = String.format("(\"%s\", \"%s\")", Extract.elementText(attrElement, "BOOLEAN_TRUE_VALUE"),
+                            Extract.elementText(attrElement, "BOOLEAN_FALSE_VALUE"));
+                }
+
 
                 attr.format = Extract.elementText(attrElement, "FORMAT");
                 attr.length = Extract.elementText(attrElement, "LENGTH");

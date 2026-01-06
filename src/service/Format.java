@@ -5,8 +5,6 @@ import domain.Flags;
 import domain.Types;
 
 public class Format {
-
-
     protected static String formatDatatype(AttributeInfo attr) {
         String length = attr.length != null ? attr.length : "";
 
@@ -17,10 +15,10 @@ public class Format {
         String dataTypeRet = switch (attr.datatype) {
             case "NUMBER" -> Types.NUMBER.getType();
             case "TEXT" -> String.format("%s(%s)",Types.TEXT.getType(), length);
-            case "BOOLEAN" -> Types.BOOLEAN.getType();
+            case "BOOLEAN" -> attr.booleanValue == null ? Types.BOOLEAN.getType() : Types.BOOLEAN.getType() + attr.booleanValue;
             case "DATE" -> Types.DATE.getType();
             case "DATETIME" -> Types.DATETIME.getType();
-            case "ENUMERATION" -> String.format("%s(%s)", Types.ENUMERATION.getType(), attr.enumName);
+            case "ENUMERATION" -> attr.enumSubset == null ? String.format("%s(%s)", Types.ENUMERATION.getType(), attr.enumName) : String.format("%s(%s.%s)", Types.ENUMERATION.getType(), attr.enumName, attr.enumSubset);
             default -> attr.datatype;
         };
 

@@ -9,6 +9,7 @@ public class AttributeInfo {
     public String length;
     public String enumName;
     public String format;
+
     public Map<String, String> codeGenProperties = new LinkedHashMap<>();
 
 
@@ -23,4 +24,7 @@ public class AttributeInfo {
     public boolean isQueryable;
     public boolean isDerived;
 
+
+    public String booleanValue;
+    public String enumSubset;
 }
