@@ -13,13 +13,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ConvertXMLToText {
-    public static final String ANSI_GREEN = "\u001B[32m";
     public static final String ANSI_CYAN = "\u001B[36m";
     public static final String ANSI_RESET = "\u001B[0m";
 
@@ -36,21 +37,6 @@ public class ConvertXMLToText {
         String entityName = Extract.textContent(doc, "NAME");
         String component = Extract.textContent(doc, "COMPONENT");
         String layer = Extract.textContent(doc, "LAYER");
-
-        NodeList codeGenAttributes = doc.getElementsByTagName("CODE_GENERATION_PROPERTIES");
-        List<String> properties = new ArrayList<>();
-
-        for (int i = 0; i < codeGenAttributes.getLength(); i++) {
-            Node attrNode = codeGenAttributes.item(i);
-            if (attrNode.getNodeType() == Node.ELEMENT_NODE) {
-                Element element = (Element) attrNode;
-
-                System.out.println(element.getBaseURI());
-
-
-            }
-
-        }
 
         NodeList attributes = doc.getElementsByTagName("ATTRIBUTE");
         List<AttributeInfo> attrList = new ArrayList<>();
@@ -108,6 +94,23 @@ public class ConvertXMLToText {
         List<StateInfo> stateList = StateMachine.extractStates(doc);
 
 
+        List<String> readAllLines = Files.readAllLines(xmlFile);
+
+
+
+        Map<String, String> codeGenProperties = readAllLines.stream()
+                .map(String::trim)
+                .takeWhile(s -> !s.equals("</CODE_GENERATION_PROPERTIES>"))
+                .filter(s -> !s.contains("<CODE_GENERATION_PROPERTIES>"))
+                .filter(s -> !s.contains("<?"))
+                .filter(s -> !s.contains("<ENTITY xmlns:xsi="))
+                .collect(Collectors.toMap(
+                        key -> key.substring(1, key.indexOf('>')),
+                        value -> value.substring(value.indexOf('>') + 1, value.indexOf("</")))
+
+                );
+
+
         generateOutputFile(
                 Path.of(outputDir.toString(), entityName + ".entity"),
                 entityName,
@@ -115,8 +118,10 @@ public class ConvertXMLToText {
                 layer,
                 attrList,
                 assocList,
-                stateList
+                stateList,
+                codeGenProperties
         );
+
 
 
     }
@@ -127,7 +132,8 @@ public class ConvertXMLToText {
                                            String layer,
                                            List<AttributeInfo> attributes,
                                            List<AssociationInfo> associations,
-                                           List<StateInfo> states) throws IOException {
+                                           List<StateInfo> states,
+                                           Map<String, String> codeGenProperties) throws IOException {
 
         try (PrintWriter writer = new PrintWriter(new FileWriter(outputFile.toFile()))){
             writer.println("entityname " + entityName + ";");
@@ -137,6 +143,19 @@ public class ConvertXMLToText {
             }
             writer.println();
             writer.println();
+
+            if (!codeGenProperties.isEmpty()) {
+                System.out.println(codeGenProperties);
+                writer.println("codegenproperties {");
+                    codeGenProperties.forEach((key, value) -> {
+                        String formatedKey = Format.tagNameToPropertyName(key);
+                        String formatedValue = "        \"" + value + "\"";
+                        writer.println("        " + formatedKey + "          " + formatedValue + ";");
+                    });
+
+                writer.println("}");
+            }
+
 
             writer.println("attributes {");
 
