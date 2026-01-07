@@ -12,5 +12,7 @@ public class AssociationInfo {
     public boolean isViewReference;
     public List<String> attributes;
     public Map<String, String> properties;
-
+    public List<String> useLines;
+    public String behavior;
+    public Map<String, String> DbImplementation;
 }

@@ -1,6 +1,5 @@
 package service;
 
-import com.sun.nio.sctp.Association;
 import domain.*;
 
 import org.w3c.dom.Document;
@@ -18,6 +17,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class ConvertXMLToText {
@@ -52,7 +52,6 @@ public class ConvertXMLToText {
 
 
 
-
                 if (attr.datatype != null && attr.datatype.equalsIgnoreCase("ENUMERATION")) {
                     attr.enumName = Extract.elementText(attrElement, "ENUMERATION_NAME");
                     if (Extract.elementText(attrElement, "ENUMERATION_SUBSET") != null) {
@@ -70,6 +69,7 @@ public class ConvertXMLToText {
 
                 attr.format = Extract.elementText(attrElement, "FORMAT");
                 attr.length = Extract.elementText(attrElement, "LENGTH");
+                attr.precision = Extract.elementText(attrElement, "PRECISION");
                 attr.isPrimaryKey = "1".equals(Extract.elementText(attrElement, "IS_PRIMARY_KEY"));
                 attr.isParentKey = "1".equals(Extract.elementText(attrElement, "IS_PARENT_KEY"));
                 attr.isPublic = "1".equals(Extract.elementText(attrElement, "IS_PUBLIC"));
@@ -89,6 +89,7 @@ public class ConvertXMLToText {
                 attrList.add(attr);
             }
         }
+
 
         List<AssociationInfo> assocList = Associations.getAssociations(doc);
         List<StateInfo> stateList = StateMachine.extractStates(doc);
@@ -111,6 +112,9 @@ public class ConvertXMLToText {
                 );
 
 
+
+
+
         generateOutputFile(
                 Path.of(outputDir.toString(), entityName + ".entity"),
                 entityName,
@@ -120,6 +124,7 @@ public class ConvertXMLToText {
                 assocList,
                 stateList,
                 codeGenProperties
+
         );
 
 
@@ -133,7 +138,8 @@ public class ConvertXMLToText {
                                            List<AttributeInfo> attributes,
                                            List<AssociationInfo> associations,
                                            List<StateInfo> states,
-                                           Map<String, String> codeGenProperties) throws IOException {
+                                           Map<String, String> codeGenProperties
+                                           ) throws IOException {
 
         try (PrintWriter writer = new PrintWriter(new FileWriter(outputFile.toFile()))){
             writer.println("entityname " + entityName + ";");
@@ -144,8 +150,12 @@ public class ConvertXMLToText {
             writer.println();
             writer.println();
 
+
+
             if (!codeGenProperties.isEmpty()) {
                 System.out.println(codeGenProperties);
+
+
                 writer.println("codegenproperties {");
                     codeGenProperties.forEach((key, value) -> {
                         String formatedKey = Format.tagNameToPropertyName(key);
@@ -204,14 +214,8 @@ public class ConvertXMLToText {
                 StateMachine.writeStates(writer, states);
             }
 
-
-
-
         }catch (RuntimeException e) {
             throw new RuntimeException(e);
         }
     }
-
-
-
 }

@@ -7,14 +7,15 @@ import domain.Types;
 public class Format {
     protected static String formatDatatype(AttributeInfo attr) {
         String length = attr.length != null ? attr.length : "";
+        String precision = attr.precision != null ? attr.precision : "";
 
         if (attr.datatype == null) {
             return "";
         }
 
         String dataTypeRet = switch (attr.datatype) {
-            case "NUMBER" -> Types.NUMBER.getType();
-            case "TEXT" -> String.format("%s(%s)",Types.TEXT.getType(), length);
+            case "NUMBER" -> attr.precision != null ? String.format("%s(%s)",Types.NUMBER.getType(), precision) : Types.NUMBER.getType();
+            case "TEXT" ->  attr.length != null ? String.format("%s(%s)",Types.TEXT.getType(), length) : Types.TEXT.getType();
             case "BOOLEAN" -> attr.booleanValue == null ? Types.BOOLEAN.getType() : Types.BOOLEAN.getType() + attr.booleanValue;
             case "DATE" -> Types.DATE.getType();
             case "DATETIME" -> Types.DATETIME.getType();
