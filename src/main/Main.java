@@ -2,26 +2,10 @@ package main;
 
 
 import service.ConvertXMLToText;
-
-
 import java.io.*;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-class ListAllFiles extends SimpleFileVisitor<Path> {
-
-    @Override
-    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-        Main.files.add(file);
-        return FileVisitResult.SKIP_SUBTREE;
-    }
-}
 
 public class Main {
     public static final String ANSI_YELLOW = "\u001B[33m";
@@ -37,6 +21,7 @@ public class Main {
 
         Path inputFolder = Paths.get("input");
         Path outputFolder = Paths.get("output");
+        Path outputCacheFolder = Paths.get("outputCache");
 
 
         if (Files.notExists(outputFolder)) {
@@ -61,6 +46,17 @@ public class Main {
                     System.out.println("error: " + e.getMessage());
                 }
             }
+        }
+
+        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(outputCacheFolder)) {
+            for (Path path : directoryStream) {
+                try {
+                    Files.delete(path);
+                }catch (Exception e) {
+                    throw new IOException();
+                }
+            }
+            Files.delete(outputCacheFolder);
         }
 
         if (count > 0) {

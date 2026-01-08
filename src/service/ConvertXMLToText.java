@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 
 public class ConvertXMLToText {
     public static final String ANSI_CYAN = "\u001B[36m";
+    public static final String ANSI_YELLOW = "\u001B[33m";
     public static final String ANSI_RESET = "\u001B[0m";
 
     public static void convert(Path xmlFile, Path outputDir) throws Exception {
@@ -111,12 +113,15 @@ public class ConvertXMLToText {
 
                 );
 
+                Path outputCache = Paths.get("outputCache");
 
+                Files.createDirectories(outputCache);
 
+        Path outputFile = Path.of(outputDir.toString(), entityName + ".entity");
+        Path outputCacheFile = Path.of(outputCache.toString(), entityName + "cache" + ".entity");
 
-
-        generateOutputFile(
-                Path.of(outputDir.toString(), entityName + ".entity"),
+        generateOutputCacheFile(
+                outputCacheFile,
                 entityName,
                 component,
                 layer,
@@ -127,11 +132,27 @@ public class ConvertXMLToText {
 
         );
 
+        generateOutputFile(outputFile, outputCacheFile);
+    }
+
+    private static void generateOutputFile(Path outputFile, Path cache) throws IOException{
+        List<String> allLines = Files.readAllLines(cache);
+
+        try (PrintWriter writer = new PrintWriter(outputFile.toFile())) {
+
+            allLines.forEach(s -> {
+                if (!s.trim().equals(";")) {
+                    writer.println(s);
+                }
+            });
+
+        }
 
 
     }
 
-    private static void generateOutputFile(Path outputFile,
+    private static void generateOutputCacheFile(
+                                           Path cacheFile,
                                            String entityName,
                                            String component,
                                            String layer,
@@ -140,8 +161,8 @@ public class ConvertXMLToText {
                                            List<StateInfo> states,
                                            Map<String, String> codeGenProperties
                                            ) throws IOException {
-
-        try (PrintWriter writer = new PrintWriter(new FileWriter(outputFile.toFile()))){
+        System.out.println(ANSI_YELLOW + "Handling cache " + cacheFile + ANSI_RESET);
+        try (PrintWriter writer = new PrintWriter(new FileWriter(cacheFile.toFile()))){
             writer.println("entityname " + entityName + ";");
             writer.println("component  " + component + ";");
             if (!layer.isEmpty()) {
@@ -213,9 +234,9 @@ public class ConvertXMLToText {
             if (!associations.isEmpty()) {
                 StateMachine.writeStates(writer, states);
             }
-
         }catch (RuntimeException e) {
             throw new RuntimeException(e);
         }
+
     }
 }

@@ -6,10 +6,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -86,9 +83,9 @@ public class Associations {
                         }
 
                         if (columnName != null && columnAlias != null) {
-                            useLines.add("use " + columnName + " as " + columnAlias);
+                            useLines.add("use " + columnName + " as " + columnAlias + ";");
                         } else if (columnName != null) {
-                            useLines.add("use " + columnName);
+                            useLines.add("use " + columnName + ";");
                         }
 
                         if (labelName != null) {
@@ -97,7 +94,7 @@ public class Associations {
                     }
                 }
 
-                // store separately
+
                 assoc.useLines = useLines;
 
                 assocList.add(assoc);
@@ -130,7 +127,6 @@ public class Associations {
             boolean hasBehavior = assoc.behavior != null && !assoc.behavior.isEmpty();
             boolean hasDbImplementation = assoc.DbImplementation != null && !assoc.DbImplementation.isEmpty();
 
-            // ---- header ----
             writer.print("   " + typeRef + "    " + name + "    " + toEntity + "(" + attrs + ")");
 
             if (hasBehavior) {
@@ -142,17 +138,19 @@ public class Associations {
                 for (String s : assoc.DbImplementation.keySet()) {
                     writer.print("    " + s + "    " + "\"" +assoc.DbImplementation.get(s) + "\";" + "\n");
                 }
-                writer.println("\n}");
+                writer.println("\n  }");
             }
 
 
-            // ---- body ----
+
             if (hasUse) {
                 writer.println("{");
                 for (String line : assoc.useLines) {
-                    writer.println("      " + line + ";");
+                    writer.println("      " + line);
                 }
                 writer.println("   }");
+            }else {
+                writer.print(";");
             }
 
             writer.println();
@@ -160,15 +158,6 @@ public class Associations {
 
         writer.println("}");
 
-        Path path = Paths.get("output/CurrencyRevalDetail.entity");
-
-        List<String> stringStream = Files.readAllLines(path)
-                .stream()
-                .filter(s -> (s.contains("reference") || s.startsWith("parent")) && !s.substring(s.length() - 1).equalsIgnoreCase("{"))
-                .map(s -> s.concat(";"))
-                .toList();
-
-        stringStream.forEach(System.out::println);
 
     }
 
